@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import logoSplash from "./assets/logo-black-bg.svg";
+import racketImg from "./assets/racket-stringing.jpg";
 
 const C = {
   bg: "#f0eeea",
@@ -198,6 +199,8 @@ const Hero = ({ setPage }) => {
   const [mounted, setMounted] = useState(false);
   const [wordIdx, setWordIdx] = useState(0);
   const [fade, setFade] = useState(true);
+  const [imgExpand, setImgExpand] = useState(0); // 0 = normal, 1 = fully expanded
+  const imgRef = useRef(null);
   const words = ["Performance.", "Precision.", "Your Game."];
 
   useEffect(() => {
@@ -209,13 +212,39 @@ const Hero = ({ setPage }) => {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!imgRef.current) return;
+      const rect = imgRef.current.getBoundingClientRect();
+      const windowH = window.innerHeight;
+      const imgH = rect.height;
+
+      // Phase 1: image entering — top edge goes from 80vh to 20vh → expand 0→1
+      // Phase 2: image leaving — bottom edge goes from 80vh to 20vh → shrink 1→0
+      const enterStart = windowH * 0.8;
+      const enterEnd = windowH * 0.2;
+      const exitStart = windowH * 0.8;
+      const exitEnd = windowH * 0.2;
+
+      const enterProgress = Math.min(1, Math.max(0, (enterStart - rect.top) / (enterStart - enterEnd)));
+      const exitProgress = Math.min(1, Math.max(0, (exitStart - rect.bottom) / (exitStart - exitEnd)));
+
+      // Expand on enter, shrink on exit
+      const progress = Math.max(0, enterProgress - exitProgress);
+      setImgExpand(progress);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <section style={{
       minHeight: "100vh", background: C.bg, padding: "0 40px",
-      display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 80,
-      position: "relative",
-    }} className="hero-section">
-      {/* Top meta row */}
+      display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 0,
+      paddingTop: 80,
+      position: "relative", overflow: "hidden",
+    }} className="hero-section">      {/* Top meta row */}
       <div className="hero-meta" style={{
         position: "absolute", top: 80, left: 40, right: 40,
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -225,7 +254,11 @@ const Hero = ({ setPage }) => {
         <span style={{ fontSize: 11, color: C.mutedLight, letterSpacing: 2.5, textTransform: "uppercase" }}>Professional Stringing</span>
       </div>
 
-      <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.8s ease 0.1s" }}>
+      {/* Text + Image — grouped and shifted down together */}
+      <div style={{ marginTop: "auto", paddingTop: "10vh" }}>
+
+      {/* Text content */}
+      <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.8s ease 0.1s", paddingBottom: 36, zIndex: 1 }}>
         <p style={{ fontSize: 13, color: C.muted, letterSpacing: 3, textTransform: "uppercase", marginBottom: 28, fontWeight: 500 }}>
           Tennis Racket Stringing
         </p>
@@ -274,6 +307,37 @@ const Hero = ({ setPage }) => {
           </div>
         </div>
       </div>
+
+      {/* Hero image — scroll-driven expand animation */}
+      <div
+        ref={imgRef}
+        className="hero-image"
+        style={{
+          width: "100%",
+          height: "70vh",
+          borderRadius: `${16 * (1 - imgExpand)}px`,
+          overflow: "hidden",
+          opacity: mounted ? 1 : 0,
+          transition: "opacity 1s ease 0.4s",
+          marginTop: "8vh",
+          marginBottom: 0,
+          marginLeft: `${-40 * imgExpand}px`,
+          marginRight: `${-40 * imgExpand}px`,
+          width: `calc(100% + ${80 * imgExpand}px)`,
+        }}
+      >
+        <img
+          src={racketImg}
+          alt="Racket on stringing machine"
+          style={{
+            width: "100%", height: "100%",
+            objectFit: "cover", objectPosition: "center 40%",
+            display: "block",
+          }}
+        />
+      </div>
+
+      </div>{/* end group */}
     </section>
   );
 };
@@ -284,7 +348,6 @@ const Divider = () => <div className="divider" style={{ height: 1, background: C
 // ── HOW IT WORKS ──────────────────────────────────────────
 const HowItWorks = () => (
   <section id="how-it-works" style={{ background: C.bg, padding: "120px 40px" }} className="section-pad">
-    <Divider />
     <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "80px 0 72px", flexWrap: "wrap", gap: 24 }}>
       <FadeIn>
         <p style={{ fontSize: 11, color: C.muted, letterSpacing: 3, textTransform: "uppercase", marginBottom: 20, fontWeight: 500 }}>Process</p>
@@ -556,9 +619,9 @@ const Contact = () => (
     </div>
     <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
       {[
-        { label: "Phone", value: "(555) 123-4567" },
-        { label: "Email", value: "hello@tensionlabs.com" },
-        { label: "Service Area", value: "Greater North Texas" },
+        { label: "Phone", value: "(945) 217-0416" },
+        { label: "Email", value: "tensionlabsstringing@gmail.com" },
+        { label: "Service Area", value: "Frisco, TX" },
         { label: "Turnaround", value: "2–3 Business Days" },
       ].map((item, i) => (
         <FadeIn key={i} delay={i * 0.1}>
@@ -793,6 +856,10 @@ export default function App() {
           .hero-cta { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
           /* Hero stats — hide on mobile */
           .hero-stats { display: none !important; }
+          /* Hero section image — hide on mobile */
+          .hero-image { display: none !important; }
+          /* Hero section padding bottom on mobile */
+          .hero-section { padding-bottom: 60px !important; }
 
           /* Shared section headers */
           .section-header { flex-direction: column !important; align-items: flex-start !important; padding: 48px 0 40px !important; }
