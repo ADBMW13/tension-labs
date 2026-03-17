@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import emailjs from "@emailjs/browser";
 import logoSplash from "./assets/logo-black-bg.svg";
+import racketImg from "./assets/racket-stringing.jpg";
 
 const C = {
   bg: "#f0eeea",
@@ -198,6 +200,8 @@ const Hero = ({ setPage }) => {
   const [mounted, setMounted] = useState(false);
   const [wordIdx, setWordIdx] = useState(0);
   const [fade, setFade] = useState(true);
+  const [imgExpand, setImgExpand] = useState(0); // 0 = normal, 1 = fully expanded
+  const imgRef = useRef(null);
   const words = ["Performance.", "Precision.", "Your Game."];
 
   useEffect(() => {
@@ -209,13 +213,39 @@ const Hero = ({ setPage }) => {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!imgRef.current) return;
+      const rect = imgRef.current.getBoundingClientRect();
+      const windowH = window.innerHeight;
+      const imgH = rect.height;
+
+      // Phase 1: image entering — top edge goes from 80vh to 20vh → expand 0→1
+      // Phase 2: image leaving — bottom edge goes from 80vh to 20vh → shrink 1→0
+      const enterStart = windowH * 0.8;
+      const enterEnd = windowH * 0.2;
+      const exitStart = windowH * 0.8;
+      const exitEnd = windowH * 0.2;
+
+      const enterProgress = Math.min(1, Math.max(0, (enterStart - rect.top) / (enterStart - enterEnd)));
+      const exitProgress = Math.min(1, Math.max(0, (exitStart - rect.bottom) / (exitStart - exitEnd)));
+
+      // Expand on enter, shrink on exit
+      const progress = Math.max(0, enterProgress - exitProgress);
+      setImgExpand(progress);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <section style={{
       minHeight: "100vh", background: C.bg, padding: "0 40px",
-      display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 80,
-      position: "relative",
-    }} className="hero-section">
-      {/* Top meta row */}
+      display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 0,
+      paddingTop: 80,
+      position: "relative", overflow: "hidden",
+    }} className="hero-section">      {/* Top meta row */}
       <div className="hero-meta" style={{
         position: "absolute", top: 80, left: 40, right: 40,
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -225,7 +255,11 @@ const Hero = ({ setPage }) => {
         <span style={{ fontSize: 11, color: C.mutedLight, letterSpacing: 2.5, textTransform: "uppercase" }}>Professional Stringing</span>
       </div>
 
-      <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.8s ease 0.1s" }}>
+      {/* Text + Image — grouped and shifted down together */}
+      <div style={{ marginTop: "auto", paddingTop: "10vh" }}>
+
+      {/* Text content */}
+      <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.8s ease 0.1s", paddingBottom: 36, zIndex: 1 }}>
         <p style={{ fontSize: 13, color: C.muted, letterSpacing: 3, textTransform: "uppercase", marginBottom: 28, fontWeight: 500 }}>
           Tennis Racket Stringing
         </p>
@@ -274,6 +308,37 @@ const Hero = ({ setPage }) => {
           </div>
         </div>
       </div>
+
+      {/* Hero image — scroll-driven expand animation */}
+      <div
+        ref={imgRef}
+        className="hero-image"
+        style={{
+          width: "100%",
+          height: "70vh",
+          borderRadius: `${16 * (1 - imgExpand)}px`,
+          overflow: "hidden",
+          opacity: mounted ? 1 : 0,
+          transition: "opacity 1s ease 0.4s",
+          marginTop: "8vh",
+          marginBottom: 0,
+          marginLeft: `${-40 * imgExpand}px`,
+          marginRight: `${-40 * imgExpand}px`,
+          width: `calc(100% + ${80 * imgExpand}px)`,
+        }}
+      >
+        <img
+          src={racketImg}
+          alt="Racket on stringing machine"
+          style={{
+            width: "100%", height: "100%",
+            objectFit: "cover", objectPosition: "center 40%",
+            display: "block",
+          }}
+        />
+      </div>
+
+      </div>{/* end group */}
     </section>
   );
 };
@@ -284,7 +349,6 @@ const Divider = () => <div className="divider" style={{ height: 1, background: C
 // ── HOW IT WORKS ──────────────────────────────────────────
 const HowItWorks = () => (
   <section id="how-it-works" style={{ background: C.bg, padding: "120px 40px" }} className="section-pad">
-    <Divider />
     <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "80px 0 72px", flexWrap: "wrap", gap: 24 }}>
       <FadeIn>
         <p style={{ fontSize: 11, color: C.muted, letterSpacing: 3, textTransform: "uppercase", marginBottom: 20, fontWeight: 500 }}>Process</p>
@@ -321,7 +385,7 @@ const HowItWorks = () => (
 );
 
 // ── SERVICES ──────────────────────────────────────────────
-const Services = ({ setPage }) => (
+const Services = ({ setPage, setSelectedService }) => (
   <section id="services" style={{ background: C.bg2, padding: "120px 40px" }} className="section-pad">
     <Divider />
     <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "80px 0 72px", flexWrap: "wrap", gap: 24 }}>
@@ -340,7 +404,7 @@ const Services = ({ setPage }) => (
     <div className="services-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
       {[
         { name: "Signature Stringing", price: "$14.99", tag: "You provide strings", desc: "Standard restringing using your own strings. Every racket gets a fresh overgrip included.", features: ["Customer-provided strings", "Fresh overgrip included", "2–3 day turnaround", "Free pickup & delivery"], highlight: false },
-        { name: "Premium Stringing", price: "$14.99 + string cost", tag: "Most Popular", desc: "We source and provide the strings. Wide selection of top brands — you don't lift a finger.", features: ["We provide the strings", "Wide string selection", "Fresh overgrip included", "Free pickup & delivery"], highlight: true },
+        { name: "Premium Stringing", price: "$19.99 + string cost", tag: "Most Popular", desc: "We source and provide the strings. Wide selection of top brands — you don't lift a finger.", features: ["We provide the strings", "Wide string selection", "Fresh overgrip included", "Free pickup & delivery"], highlight: true },
       ].map((t, i) => (
         <FadeIn key={i} delay={i * 0.15}>
           <div style={{
@@ -369,7 +433,7 @@ const Services = ({ setPage }) => (
                 </div>
               ))}
             </div>
-            <button onClick={() => { setPage("book"); window.scrollTo({ top: 0 }); }} style={{
+            <button onClick={() => { setSelectedService(t.name === "Signature Stringing" ? "Signature Stringing — $14.99 (Customer provides strings)" : "Premium Stringing — $19.99 + string cost (We provide strings)"); setPage("book"); window.scrollTo({ top: 0 }); }} style={{
               width: "100%", padding: "14px 0", borderRadius: 100,
               background: t.highlight ? C.white : C.dark,
               color: t.highlight ? C.dark : C.white,
@@ -395,15 +459,15 @@ const AIAdvisor = () => {
 
   const getRecommendation = async () => {
     setLoading(true); setResult(null);
-    const prompt = `You are an expert tennis string advisor for Tension Labs. Respond ONLY in valid JSON with no markdown, no code blocks, just raw JSON: {"stringType":"...","stringModel":"...","tension":"...","reason":"2-3 sentence explanation"}
-Choose string models only from: Luxilon ALU Power 16L, Babolat RPM Blast 16, Wilson NXT 16, Tecnifibre X-One Biphase 16, Babolat VS Natural Gut 16, Head Lynx Tour 17, Solinco Hyper-G 16L.
+    const prompt = `You are an expert tennis string advisor with deep knowledge of all tennis strings on the market. Respond ONLY in valid JSON with no markdown, no code blocks, just raw JSON: {"stringType":"...","stringModel":"...","tension":"...","reason":"2-3 sentence explanation"}
 
-Racket: ${form.racket || "Not specified"}
-Playing Style: ${form.style || "Not specified"}
-Skill Level: ${form.level || "Not specified"}
-Elbow Health: ${form.elbow}
+The player's details:
+- Racket: ${form.racket || "Not specified"}
+- Playing Style: ${form.style || "Not specified"}
+- Skill Level: ${form.level || "Not specified"}
+- Elbow Health: ${form.elbow}
 
-Recommend the best string setup for this player.`;
+Based on these specifics, recommend the single best string model available on the market today. Consider all string categories: polyester, multifilament, natural gut, synthetic gut, hybrid setups. Pick the most accurate string for THIS player's exact needs — do not default to the same strings every time. Provide a specific tension range in lbs appropriate for their racket and style.`;
 
     const parseResult = (text) => {
       const cleaned = text.replace(/```json|```/gi, "").trim();
@@ -424,7 +488,7 @@ Recommend the best string setup for this player.`;
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
           max_tokens: 500,
-          temperature: 0.7,
+          temperature: 0.9,
           messages: [
             { role: "system", content: "You are an expert tennis string advisor. Always respond with raw valid JSON only, no markdown." },
             { role: "user", content: prompt },
@@ -521,7 +585,7 @@ Recommend the best string setup for this player.`;
             ) : (
               <div style={{ animation: "fadeUp 0.5s ease", width: "100%" }}>
                 <p style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", letterSpacing: 3, textTransform: "uppercase", marginBottom: 32, fontWeight: 600 }}>Your Recommendation</p>
-                {[{ label: "String Type", value: result.stringType }, { label: "String Model", value: result.stringModel }, { label: "Tension", value: result.tension }].map((item, i) => (
+                {[{ label: "String Type", value: result.stringType?.replace(/\b\w/g, c => c.toUpperCase()) }, { label: "String Model", value: result.stringModel }, { label: "Tension", value: result.tension }].map((item, i) => (
                   <div key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16, marginBottom: 16 }}>
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 5 }}>{item.label}</div>
                     <div style={{ fontSize: 17, fontWeight: 600, color: C.white, letterSpacing: "-0.01em" }}>{item.value}</div>
@@ -556,9 +620,9 @@ const Contact = () => (
     </div>
     <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
       {[
-        { label: "Phone", value: "(555) 123-4567" },
-        { label: "Email", value: "hello@tensionlabs.com" },
-        { label: "Service Area", value: "Greater North Texas" },
+        { label: "Phone", value: "(945) 217-0416" },
+        { label: "Email", value: "tensionlabsstringing@gmail.com" },
+        { label: "Service Area", value: "Frisco, TX" },
         { label: "Turnaround", value: "2–3 Business Days" },
       ].map((item, i) => (
         <FadeIn key={i} delay={i * 0.1}>
@@ -641,10 +705,96 @@ const AboutPage = ({ setPage }) => (
 );
 
 // ── BOOK PAGE ─────────────────────────────────────────────
-const BookPage = ({ setPage }) => {
+const BookPage = ({ setPage, selectedService }) => {
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", service: "Signature Stringing", stringType: "", tension: "", racket: "", pickup: "", dropoff: "", date: "", notes: "" });
-  const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({ name: "", phone: "", email: "", service: selectedService || "Signature Stringing — $14.99 (Customer provides strings)", stringType: "", tension: "", racket: "", pickup: "", dropoff: "", date: "", notes: "" });
+  const update = (k, v) => { setForm(p => ({ ...p, [k]: v })); setErrors(e => ({ ...e, [k]: "" })); };
+  const formatPhone = (val) => {
+    const digits = val.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = "Name is required.";
+
+    if (!form.phone.trim()) e.phone = "Phone number is required.";
+    else if (!/^\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}$/.test(form.phone.trim())) e.phone = "Enter a valid phone number, e.g. (945) 217-0416.";
+
+    if (!form.email.trim()) e.email = "Email is required.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = "Enter a valid email address.";
+
+    if (!form.racket.trim()) e.racket = "Racket brand & model is required.";
+
+    if (!form.tension.trim()) e.tension = "Desired tension is required.";
+    else if (!/^\d{1,3}(\.\d)?(\s*(lbs?|lb|pounds?))?$/i.test(form.tension.trim())) e.tension = "Enter a valid tension, e.g. 55 or 55 lbs.";
+    else { const num = parseFloat(form.tension); if (num < 30 || num > 80) e.tension = "Tension must be between 30–80 lbs."; }
+
+    if (!form.stringType.trim()) e.stringType = "String type & gauge is required.";
+    if (!form.pickup.trim()) e.pickup = "Pickup location is required.";
+    if (!form.dropoff.trim()) e.dropoff = "Drop-off location is required.";
+
+    if (!form.date) e.date = "Preferred pickup date is required.";
+    else { const selected = new Date(form.date); const today = new Date(); today.setHours(0,0,0,0); if (selected < today) e.date = "Please select a future date."; }
+
+    return e;
+  };
+
+  const handleSubmit = () => {
+    const e = validate();
+    if (Object.keys(e).length > 0) { setErrors(e); window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); return; }
+    setShowConfirm(true);
+  };
+
+  const confirmOrder = async () => {
+    setSending(true);
+    setSendError("");
+    const SERVICE  = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const BIZ_TPL  = import.meta.env.VITE_EMAILJS_TEMPLATE_BIZ;
+    const CUST_TPL = import.meta.env.VITE_EMAILJS_TEMPLATE_CUST;
+    const PUB_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+    const params = {
+      customer_name:    form.name,
+      customer_phone:   form.phone,
+      customer_email:   form.email,
+      service_type:     form.service,
+      racket:           form.racket,
+      string_type:      form.stringType,
+      tension:          form.tension,
+      pickup_location:  form.pickup,
+      dropoff_location: form.dropoff,
+      preferred_date:   form.date,
+      notes:            form.notes || "None",
+    };
+    try {
+      await emailjs.send(SERVICE, BIZ_TPL,  { ...params, to_email: "tensionlabsstringing@gmail.com" }, PUB_KEY);
+      await emailjs.send(SERVICE, CUST_TPL, { ...params, to_email: form.email }, PUB_KEY);
+      setShowConfirm(false);
+      setSubmitted(true);
+    } catch (err) {
+      console.error("EmailJS error status:", err?.status);
+      console.error("EmailJS error text:", err?.text);
+      console.error("EmailJS full error:", JSON.stringify(err));
+      setSendError(`Error ${err?.status || ""}: ${err?.text || "Unknown error. Check console for details."}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showConfirm) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [showConfirm]);
 
   const inputStyle = {
     width: "100%", padding: "13px 16px", borderRadius: 10,
@@ -652,11 +802,86 @@ const BookPage = ({ setPage }) => {
     color: C.dark, fontSize: 14, fontFamily: "inherit", outline: "none",
     transition: "border-color 0.25s, box-shadow 0.25s", boxSizing: "border-box",
   };
+  const inputErr = { ...inputStyle, border: `1px solid #e05252`, background: "#fff8f8" };
   const labelStyle = { display: "block", fontSize: 10, fontWeight: 600, color: C.muted, marginBottom: 7, letterSpacing: 2, textTransform: "uppercase" };
+  const errMsg = (key) => errors[key] ? <p style={{ fontSize: 11, color: "#e05252", marginTop: 5, fontWeight: 500 }}>{errors[key]}</p> : null;
+  const iStyle = (key) => errors[key] ? inputErr : inputStyle;
+  const focusOn = (e) => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; };
+  const focusOff = (e, key) => { e.target.style.borderColor = errors[key] ? "#e05252" : C.border; e.target.style.boxShadow = "none"; };
+
+  // Order confirmation modal
+  const ConfirmModal = () => (
+    <div onClick={() => setShowConfirm(false)} style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(13,13,13,0.6)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "24px",
+      animation: "fadeIn 0.25s ease",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: C.white, borderRadius: 24, padding: "48px 44px",
+        maxWidth: 520, width: "100%", maxHeight: "90vh", overflowY: "auto",
+        boxShadow: "0 32px 80px rgba(13,13,13,0.2)",
+        animation: "slideUp 0.3s ease",
+      }}>
+        <p style={{ fontSize: 10, color: C.muted, letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Review Your Order</p>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: C.dark, letterSpacing: "-0.03em", marginBottom: 32 }}>ORDER SUMMARY.</h2>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {[
+            { label: "Name", value: form.name },
+            { label: "Phone", value: form.phone },
+            { label: "Email", value: form.email },
+            { label: "Service", value: form.service },
+            { label: "Racket", value: form.racket },
+            { label: "String Type & Gauge", value: form.stringType },
+            { label: "Desired Tension", value: form.tension },
+            { label: "Pickup Address", value: form.pickup },
+            { label: "Dropoff Address", value: form.dropoff },
+            { label: "Preferred Date", value: form.date },
+            { label: "Additional Notes", value: form.notes },
+          ].filter(item => item.value).map((item, i) => (
+            <div key={i} style={{ padding: "14px 0", borderBottom: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 10, color: C.muted, letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>{item.label}</span>
+              <span style={{ fontSize: 14, color: C.dark, fontWeight: 500 }}>{item.value}</span>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ fontSize: 12, color: C.muted, textAlign: "center", marginTop: 24, lineHeight: 1.6 }}>
+          No payment required now — payment is collected at pickup.
+        </p>
+
+        <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
+          <button onClick={() => setShowConfirm(false)} style={{
+            flex: 1, padding: "14px 0", borderRadius: 100,
+            background: "transparent", border: `1px solid ${C.borderDark}`,
+            fontSize: 13, fontWeight: 600, color: C.dark, cursor: "pointer",
+            fontFamily: "inherit", transition: "all 0.25s",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.bg2; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >Edit Order</button>
+          <button onClick={confirmOrder} disabled={sending} style={{
+            flex: 2, padding: "14px 0", borderRadius: 100,
+            background: C.dark, border: "none",
+            fontSize: 13, fontWeight: 600, color: C.white, cursor: sending ? "not-allowed" : "pointer",
+            fontFamily: "inherit", transition: "opacity 0.25s",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+            opacity: sending ? 0.6 : 1,
+          }}
+            onMouseEnter={e => { if (!sending) e.currentTarget.style.opacity = "0.85"; }}
+            onMouseLeave={e => { if (!sending) e.currentTarget.style.opacity = "1"; }}
+          >{sending ? "Sending…" : <> Confirm Order <ArrowRight size={12} /></>}</button>
+        </div>
+        {sendError && <p style={{ fontSize: 12, color: "#e05252", textAlign: "center", marginTop: 16, fontWeight: 500 }}>{sendError}</p>}
+      </div>
+    </div>
+  );
 
   if (submitted) return (
     <div style={{ paddingTop: 64, minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", padding: "120px 40px" }}>
-      <div style={{ fontSize: 52, marginBottom: 24, lineHeight: 1 }}>✦</div>
+      <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#4ade80", marginBottom: 24, marginTop: -32, boxShadow: "0 0 0 6px rgba(74,222,128,0.2)" }} />
       <p style={{ fontSize: 11, color: C.muted, letterSpacing: 3, textTransform: "uppercase", marginBottom: 20, fontWeight: 500 }}>Order Received</p>
       <h1 style={{ fontSize: "clamp(40px, 7vw, 80px)", fontWeight: 800, color: C.dark, lineHeight: 1, letterSpacing: "-0.035em", marginBottom: 24 }}>THANK YOU.</h1>
       <p style={{ fontSize: 16, color: C.muted, maxWidth: 420, lineHeight: 1.75, marginBottom: 48 }}>
@@ -675,6 +900,7 @@ const BookPage = ({ setPage }) => {
 
   return (
     <div style={{ paddingTop: 64, background: C.bg, minHeight: "100vh" }}>
+      {showConfirm && <ConfirmModal />}
       <section style={{ padding: "80px 40px 120px" }}>
         <button onClick={() => { setPage("home"); window.scrollTo({ top: 0 }); }} style={{
           display: "flex", alignItems: "center", gap: 8, background: "none", border: "none",
@@ -707,28 +933,32 @@ const BookPage = ({ setPage }) => {
           <div className="book-form-wrap" style={{ display: "flex", justifyContent: "center", marginTop: 320 }}>
           <div style={{ background: C.white, borderRadius: 20, padding: "48px 44px", maxWidth: 680, width: "100%", boxShadow: "0 2px 20px rgba(13,13,13,0.06)" }}>
             <div className="book-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-              <div><label style={labelStyle}>Full Name *</label><input style={inputStyle} placeholder="John Smith" value={form.name} onChange={e => update("name", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
-              <div><label style={labelStyle}>Phone *</label><input style={inputStyle} placeholder="(555) 123-4567" value={form.phone} onChange={e => update("phone", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
+              <div><label style={labelStyle}>Full Name</label><input style={iStyle("name")} placeholder="John Smith" value={form.name} onChange={e => update("name", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "name")} />{errMsg("name")}</div>
+              <div><label style={labelStyle}>Phone</label><input style={iStyle("phone")} placeholder="(555) 123-4567" value={form.phone} onChange={e => update("phone", formatPhone(e.target.value))} onFocus={focusOn} onBlur={e => focusOff(e, "phone")} />{errMsg("phone")}</div>
             </div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Email</label><input style={inputStyle} placeholder="john@example.com" value={form.email} onChange={e => update("email", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
+            <div style={{ marginTop: 18 }}><label style={labelStyle}>Email</label><input style={iStyle("email")} placeholder="john@example.com" value={form.email} onChange={e => update("email", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "email")} />{errMsg("email")}</div>
             <div className="book-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 18 }}>
-              <div><label style={labelStyle}>Racket Brand & Model *</label><input style={inputStyle} placeholder="e.g. Wilson Blade 98" value={form.racket} onChange={e => update("racket", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
-              <div><label style={labelStyle}>Desired Tension</label><input style={inputStyle} placeholder="e.g. 55 lbs" value={form.tension} onChange={e => update("tension", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
+              <div><label style={labelStyle}>Racket Brand & Model</label><input style={iStyle("racket")} placeholder="e.g. Wilson Blade 98" value={form.racket} onChange={e => update("racket", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "racket")} />{errMsg("racket")}</div>
+              <div><label style={labelStyle}>Desired Tension</label><input style={iStyle("tension")} placeholder="e.g. 55 lbs" value={form.tension} onChange={e => update("tension", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "tension")} />{errMsg("tension")}</div>
             </div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Service</label><select style={{ ...inputStyle, cursor: "pointer", appearance: "none" }} value={form.service} onChange={e => update("service", e.target.value)}><option>Signature Stringing</option><option>Premium Stringing</option></select></div>
+            <div style={{ marginTop: 18 }}><label style={labelStyle}>Service</label><select style={{ ...inputStyle, cursor: "pointer", appearance: "none" }} value={form.service} onChange={e => update("service", e.target.value)}><option>Signature Stringing — $14.99 (Customer provides strings)</option><option>Premium Stringing — $19.99 + string cost (We provide strings)</option></select></div>
             <div style={{ marginTop: 18 }}>
               <label style={labelStyle}>String Type & Gauge</label>
-              <input style={inputStyle} placeholder="e.g. Luxilon ALU Power 16L, Babolat RPM Blast 16..." value={form.stringType} onChange={e => update("stringType", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} />
+              <input style={iStyle("stringType")} placeholder="e.g. Luxilon ALU Power 16L, Babolat RPM Blast 16..." value={form.stringType} onChange={e => update("stringType", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "stringType")} />
+              {errMsg("stringType")}
               <p style={{ fontSize: 12, color: C.muted, marginTop: 6, cursor: "pointer", transition: "color 0.2s" }}
                 onClick={() => { setPage("home"); setTimeout(() => document.getElementById("ai-advisor")?.scrollIntoView({ behavior: "smooth" }), 300); }}
                 onMouseEnter={e => e.target.style.color = C.dark} onMouseLeave={e => e.target.style.color = C.muted}
               >→ Not sure? Use our AI Advisor on the homepage.</p>
             </div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Pickup Location</label><input style={inputStyle} placeholder="e.g. Your home, local tennis club..." value={form.pickup} onChange={e => update("pickup", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Drop-Off Location</label><input style={inputStyle} placeholder="e.g. Same as pickup..." value={form.dropoff} onChange={e => update("dropoff", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Preferred Pickup Date</label><input type="date" style={inputStyle} value={form.date} onChange={e => update("date", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Additional Notes</label><textarea style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} placeholder="Any special requests..." value={form.notes} onChange={e => update("notes", e.target.value)} onFocus={e => { e.target.style.borderColor = C.dark; e.target.style.boxShadow = "0 0 0 3px rgba(13,13,13,0.07)"; }} onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} /></div>
-            <button onClick={() => setSubmitted(true)} style={{
+            <div style={{ marginTop: 18 }}><label style={labelStyle}>Pickup Location</label><input style={iStyle("pickup")} placeholder="e.g. Your home, local tennis club..." value={form.pickup} onChange={e => update("pickup", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "pickup")} />{errMsg("pickup")}</div>
+            <div style={{ marginTop: 18 }}><label style={labelStyle}>Drop-Off Location</label><input style={iStyle("dropoff")} placeholder="e.g. Same as pickup..." value={form.dropoff} onChange={e => update("dropoff", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "dropoff")} />{errMsg("dropoff")}</div>
+            <div style={{ marginTop: 18 }}><label style={labelStyle}>Preferred Pickup Date</label><input type="date" style={iStyle("date")} value={form.date} onChange={e => update("date", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "date")} />{errMsg("date")}</div>
+            <div style={{ marginTop: 18 }}><label style={labelStyle}>Additional Notes <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label><textarea style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} placeholder="Any special requests..." value={form.notes} onChange={e => update("notes", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "notes")} /></div>
+            <p style={{ marginTop: 24, fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6 }}>
+              No payment required now — payment is collected at pickup.
+            </p>
+            <button onClick={handleSubmit} style={{
               width: "100%", padding: "15px 0", borderRadius: 100, marginTop: 28,
               background: C.dark, color: C.white, border: "none",
               fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
@@ -748,11 +978,11 @@ const BookPage = ({ setPage }) => {
 };
 
 // ── HOME PAGE ─────────────────────────────────────────────
-const HomePage = ({ setPage }) => (
+const HomePage = ({ setPage, setSelectedService }) => (
   <>
     <Hero setPage={setPage} />
     <HowItWorks />
-    <Services setPage={setPage} />
+    <Services setPage={setPage} setSelectedService={setSelectedService} />
     <AIAdvisor />
     <Contact />
     <Footer />
@@ -764,6 +994,7 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [scrolled, setScrolled] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
+  const [selectedService, setSelectedService] = useState("Signature Stringing — $14.99 (Customer provides strings)");
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -778,6 +1009,8 @@ export default function App() {
         input::placeholder, textarea::placeholder { color: #bbb; }
         input[type="date"] { color-scheme: light; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(32px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 900px) {
           .nav-desktop { display: none !important; }
@@ -793,6 +1026,10 @@ export default function App() {
           .hero-cta { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
           /* Hero stats — hide on mobile */
           .hero-stats { display: none !important; }
+          /* Hero section image — hide on mobile */
+          .hero-image { display: none !important; }
+          /* Hero section padding bottom on mobile */
+          .hero-section { padding-bottom: 60px !important; }
 
           /* Shared section headers */
           .section-header { flex-direction: column !important; align-items: flex-start !important; padding: 48px 0 40px !important; }
@@ -842,9 +1079,9 @@ export default function App() {
         transition: "opacity 0.6s ease 0.1s",
       }}>
         <Navbar page={page} setPage={setPage} scrolled={scrolled} />
-        {page === "home" && <HomePage setPage={setPage} />}
+        {page === "home" && <HomePage setPage={setPage} setSelectedService={setSelectedService} />}
         {page === "about" && <AboutPage setPage={setPage} />}
-        {page === "book" && <BookPage setPage={setPage} />}
+        {page === "book" && <BookPage setPage={setPage} selectedService={selectedService} />}
       </div>
     </div>
   );
