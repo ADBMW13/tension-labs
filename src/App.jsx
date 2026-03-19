@@ -65,6 +65,30 @@ const XIcon = () => (
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
+// Animated hamburger → X morphing icon
+const HamburgerIcon = ({ open }) => (
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+    style={{ display: "block" }}>
+    {/* Top line: slides up and rotates to top arm of X */}
+    <line
+      x1="3" y1="7" x2="19" y2="7"
+      style={{
+        transformOrigin: "11px 7px",
+        transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
+        transform: open ? "translateY(4px) rotate(45deg)" : "translateY(0) rotate(0deg)",
+      }}
+    />
+    {/* Bottom line: slides up and rotates to bottom arm of X */}
+    <line
+      x1="3" y1="15" x2="19" y2="15"
+      style={{
+        transformOrigin: "11px 15px",
+        transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
+        transform: open ? "translateY(-4px) rotate(-45deg)" : "translateY(0) rotate(0deg)",
+      }}
+    />
+  </svg>
+);
 
 // ── SPLASH SCREEN ─────────────────────────────────────────
 const SplashScreen = ({ onDone }) => {
@@ -112,8 +136,8 @@ const Navbar = ({ page, setPage, scrolled }) => {
   const links = [
     { label: "How It Works", action: () => scrollTo("how-it-works") },
     { label: "Services", action: () => scrollTo("services") },
-    { label: "About", action: () => { setPage("about"); window.scrollTo({ top: 0 }); setMobileOpen(false); } },
     { label: "Contact", action: () => scrollTo("contact") },
+    { label: "About", action: () => { setPage("about"); window.scrollTo({ top: 0 }); setMobileOpen(false); } },
   ];
   return (
     <>
@@ -154,30 +178,51 @@ const Navbar = ({ page, setPage, scrolled }) => {
         </div>
         <button className="nav-mobile" onClick={() => setMobileOpen(!mobileOpen)} style={{
           display: "none", background: "none", border: "none", color: C.dark, cursor: "pointer", padding: 4,
-        }}>{mobileOpen ? <XIcon /> : <MenuIcon />}</button>
+        }}><HamburgerIcon open={mobileOpen} /></button>
       </nav>
-      {mobileOpen && (
+
+      {/* Mobile dropdown — always mounted, animated with transform */}
+      <div style={{
+        position: "fixed", top: 64, left: 0, right: 0, zIndex: 999,
+        pointerEvents: mobileOpen ? "auto" : "none",
+        // Hide on desktop
+        display: "none",
+      }} className="mobile-menu-panel">
+        {/* Clip wrapper: slides the panel up/down */}
         <div style={{
-          position: "fixed", top: 64, left: 0, right: 0, zIndex: 999,
-          background: "rgba(240,238,234,0.98)", backdropFilter: "blur(20px)",
-          borderBottom: `1px solid ${C.border}`, padding: "16px 32px 28px",
-          display: "flex", flexDirection: "column",
-          animation: "slideDown 0.25s ease",
+          overflow: "hidden",
+          transform: mobileOpen ? "translateY(0%)" : "translateY(-100%)",
+          transition: "transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
         }}>
-          {links.map(l => (
-            <button key={l.label} onClick={l.action} style={{
-              background: "none", border: "none", borderBottom: `1px solid ${C.border}`,
-              padding: "15px 0", fontSize: 16, fontWeight: 400, color: C.dark,
-              cursor: "pointer", textAlign: "left", fontFamily: "inherit",
-            }}>{l.label}</button>
-          ))}
-          <button onClick={() => { setPage("book"); window.scrollTo({ top: 0 }); setMobileOpen(false); }} style={{
-            background: C.dark, border: "none", padding: "14px 0", borderRadius: 100,
-            fontSize: 15, fontWeight: 500, color: C.white, cursor: "pointer",
-            fontFamily: "inherit", marginTop: 16,
-          }}>Book Now</button>
+          <div style={{
+            background: "rgba(240,238,234,0.98)",
+            backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+            borderBottom: `1px solid ${C.border}`,
+            padding: "8px 28px 24px",
+          }}>
+            {links.map((l, i) => (
+              <button key={l.label} onClick={l.action} style={{
+                background: "none", border: "none",
+                borderBottom: `1px solid ${C.border}`,
+                padding: "16px 0", fontSize: 16, fontWeight: 400, color: C.dark,
+                cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+                width: "100%", display: "block",
+                opacity: mobileOpen ? 1 : 0,
+                transform: mobileOpen ? "translateY(0)" : "translateY(-6px)",
+                transition: `opacity 0.35s ease ${0.08 + i * 0.06}s, transform 0.35s ease ${0.08 + i * 0.06}s`,
+              }}>{l.label}</button>
+            ))}
+            <button onClick={() => { setPage("book"); window.scrollTo({ top: 0 }); setMobileOpen(false); }} style={{
+              background: C.dark, border: "none", padding: "14px 0", borderRadius: 100,
+              fontSize: 15, fontWeight: 500, color: C.white, cursor: "pointer",
+              fontFamily: "inherit", marginTop: 16, width: "100%",
+              opacity: mobileOpen ? 1 : 0,
+              transform: mobileOpen ? "translateY(0)" : "translateY(-6px)",
+              transition: `opacity 0.35s ease 0.32s, transform 0.35s ease 0.32s`,
+            }}>Book Now</button>
+          </div>
         </div>
-      )}
+      </div>
     </>
   );
 };
@@ -200,7 +245,7 @@ const Hero = ({ setPage }) => {
   const [mounted, setMounted] = useState(false);
   const [wordIdx, setWordIdx] = useState(0);
   const [fade, setFade] = useState(true);
-  const [imgExpand, setImgExpand] = useState(0); // 0 = normal, 1 = fully expanded
+  const [imgExpand, setImgExpand] = useState(0);
   const imgRef = useRef(null);
   const words = ["Performance.", "Precision.", "Your Game."];
 
@@ -218,21 +263,28 @@ const Hero = ({ setPage }) => {
       if (!imgRef.current) return;
       const rect = imgRef.current.getBoundingClientRect();
       const windowH = window.innerHeight;
-      const imgH = rect.height;
 
-      // Phase 1: image entering — top edge goes from 80vh to 20vh → expand 0→1
-      // Phase 2: image leaving — bottom edge goes from 80vh to 20vh → shrink 1→0
-      const enterStart = windowH * 0.8;
-      const enterEnd = windowH * 0.2;
-      const exitStart = windowH * 0.8;
-      const exitEnd = windowH * 0.2;
-
-      const enterProgress = Math.min(1, Math.max(0, (enterStart - rect.top) / (enterStart - enterEnd)));
-      const exitProgress = Math.min(1, Math.max(0, (exitStart - rect.bottom) / (exitStart - exitEnd)));
-
-      // Expand on enter, shrink on exit
-      const progress = Math.max(0, enterProgress - exitProgress);
-      setImgExpand(progress);
+      if (window.innerWidth <= 900) {
+        // Mobile/tablet: use simple scrollY-based progress.
+        // At scrollY=0 → expand=0 (image at rest, aligned with text).
+        // Fully expanded at scrollY=200. Stays expanded while image visible.
+        // Shrinks back as image exits the viewport at the top.
+        const scrollY = window.scrollY;
+        const expandIn = Math.min(1, Math.max(0, scrollY / 200));
+        // Shrink back when image bottom reaches ~65% of viewport height
+        const shrinkStart = windowH * 0.65;
+        const shrinkOut = Math.min(1, Math.max(0, (shrinkStart - rect.bottom) / shrinkStart));
+        setImgExpand(Math.max(0, expandIn - shrinkOut));
+      } else {
+        // Desktop — unchanged
+        const enterStart = windowH * 0.8;
+        const enterEnd   = windowH * 0.2;
+        const exitStart  = windowH * 0.8;
+        const exitEnd    = windowH * 0.2;
+        const enterProgress = Math.min(1, Math.max(0, (enterStart - rect.top) / (enterStart - enterEnd)));
+        const exitProgress  = Math.min(1, Math.max(0, (exitStart - rect.bottom) / (exitStart - exitEnd)));
+        setImgExpand(Math.max(0, enterProgress - exitProgress));
+      }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
@@ -256,14 +308,14 @@ const Hero = ({ setPage }) => {
       </div>
 
       {/* Text + Image — grouped and shifted down together */}
-      <div style={{ marginTop: "auto", paddingTop: "10vh" }}>
+      <div className="hero-content-group" style={{ marginTop: "auto", paddingTop: "10vh" }}>
 
       {/* Text content */}
       <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.8s ease 0.1s", paddingBottom: 36, zIndex: 1 }}>
         <p style={{ fontSize: 13, color: C.muted, letterSpacing: 3, textTransform: "uppercase", marginBottom: 28, fontWeight: 500 }}>
           Tennis Racket Stringing
         </p>
-        <h1 style={{
+        <h1 className="hero-title" style={{
           fontSize: "clamp(52px, 8.5vw, 124px)", fontWeight: 800, color: C.dark,
           lineHeight: 0.96, letterSpacing: "-0.035em", margin: "0 0 52px",
           fontFamily: "inherit", marginLeft: "-3px",
@@ -279,7 +331,7 @@ const Hero = ({ setPage }) => {
         </h1>
 
         <div className="hero-cta" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <button onClick={() => { setPage("book"); window.scrollTo({ top: 0 }); }} style={{
+          <button className="hero-btn" onClick={() => { setPage("book"); window.scrollTo({ top: 0 }); }} style={{
             background: C.dark, border: "none", padding: "16px 36px", borderRadius: 100,
             fontSize: 14, fontWeight: 500, color: C.white, cursor: "pointer",
             fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8,
@@ -289,7 +341,7 @@ const Hero = ({ setPage }) => {
             onMouseLeave={e => { e.currentTarget.style.background = C.dark; e.currentTarget.style.transform = "scale(1)"; }}
           >Book a Stringing <ArrowUpRight size={13} /></button>
 
-          <button onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })} style={{
+          <button className="hero-btn" onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })} style={{
             background: "transparent", border: `1px solid ${C.borderDark}`, padding: "16px 36px", borderRadius: 100,
             fontSize: 14, fontWeight: 400, color: C.dark, cursor: "pointer",
             fontFamily: "inherit", transition: "all 0.3s ease",
@@ -314,17 +366,16 @@ const Hero = ({ setPage }) => {
         ref={imgRef}
         className="hero-image"
         style={{
-          width: "100%",
-          height: "70vh",
+          height: window.innerWidth > 900 ? "70vh" : "44vh",
           borderRadius: `${16 * (1 - imgExpand)}px`,
           overflow: "hidden",
           opacity: mounted ? 1 : 0,
           transition: "opacity 1s ease 0.4s",
-          marginTop: "8vh",
+          marginTop: window.innerWidth > 900 ? "8vh" : "32px",
           marginBottom: 0,
-          marginLeft: `${-40 * imgExpand}px`,
-          marginRight: `${-40 * imgExpand}px`,
-          width: `calc(100% + ${80 * imgExpand}px)`,
+          marginLeft: window.innerWidth > 900 ? `${-40 * imgExpand}px` : `${-20 * imgExpand}px`,
+          marginRight: window.innerWidth > 900 ? `${-40 * imgExpand}px` : `${-20 * imgExpand}px`,
+          width: window.innerWidth > 900 ? `calc(100% + ${80 * imgExpand}px)` : `calc(100% + ${40 * imgExpand}px)`,
         }}
       >
         <img
@@ -404,7 +455,7 @@ const Services = ({ setPage, setSelectedService }) => (
     <div className="services-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
       {[
         { name: "Signature Stringing", price: "$14.99", tag: "You provide strings", desc: "Standard restringing using your own strings. Every racket gets a fresh overgrip included.", features: ["Customer-provided strings", "Fresh overgrip included", "2–3 day turnaround", "Free pickup & delivery"], highlight: false },
-        { name: "Premium Stringing", price: "$19.99 + string cost", tag: "Most Popular", desc: "We source and provide the strings. Wide selection of top brands — you don't lift a finger.", features: ["We provide the strings", "Wide string selection", "Fresh overgrip included", "Free pickup & delivery"], highlight: true },
+        { name: "Premium Stringing", price: "$19.99 + string cost", tag: "Most Popular", desc: "We source and provide the strings. We get any string of your choice — you don't lift a finger.", features: ["We provide the strings", "Wide string selection", "Fresh overgrip included", "Free pickup & delivery"], highlight: true },
       ].map((t, i) => (
         <FadeIn key={i} delay={i * 0.15}>
           <div style={{
@@ -418,10 +469,10 @@ const Services = ({ setPage, setSelectedService }) => (
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 20px rgba(13,13,13,0.06)"; }}
           >
             {t.highlight && (
-              <span style={{ position: "absolute", top: 24, right: 24, background: "rgba(255,255,255,0.15)", color: C.white, fontSize: 10, fontWeight: 600, padding: "5px 14px", borderRadius: 100, letterSpacing: 1.5, textTransform: "uppercase" }}>{t.tag}</span>
+              <span className="service-tag" style={{ position: "absolute", top: 24, right: 24, background: "rgba(255,255,255,0.15)", color: C.white, fontSize: 10, fontWeight: 600, padding: "5px 14px", borderRadius: 100, letterSpacing: 1.5, textTransform: "uppercase" }}>{t.tag}</span>
             )}
             {!t.highlight && (
-              <span style={{ position: "absolute", top: 24, right: 24, background: C.bg2, color: C.muted, fontSize: 10, fontWeight: 600, padding: "5px 14px", borderRadius: 100, letterSpacing: 1.5, textTransform: "uppercase" }}>{t.tag}</span>
+              <span className="service-tag" style={{ position: "absolute", top: 24, right: 24, background: C.bg2, color: C.muted, fontSize: 10, fontWeight: 600, padding: "5px 14px", borderRadius: 100, letterSpacing: 1.5, textTransform: "uppercase" }}>{t.tag}</span>
             )}
             <h3 style={{ fontSize: 22, fontWeight: 700, color: t.highlight ? C.white : C.dark, marginBottom: 6, marginTop: 8, letterSpacing: "-0.01em" }}>{t.name}</h3>
             <div style={{ fontSize: 36, fontWeight: 800, color: t.highlight ? "rgba(255,255,255,0.95)" : C.dark, marginBottom: 16, letterSpacing: "-0.03em" }}>{t.price}</div>
@@ -453,7 +504,7 @@ const Services = ({ setPage, setSelectedService }) => (
 
 // ── AI ADVISOR ────────────────────────────────────────────
 const AIAdvisor = () => {
-  const [form, setForm] = useState({ racket: "", style: "", level: "", elbow: "Healthy" });
+  const [form, setForm] = useState({ racket: "", style: "", level: "", priority: "", elbow: "Healthy" });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -465,6 +516,7 @@ The player's details:
 - Racket: ${form.racket || "Not specified"}
 - Playing Style: ${form.style || "Not specified"}
 - Skill Level: ${form.level || "Not specified"}
+- Top Priority: ${form.priority || "Not specified"}
 - Elbow Health: ${form.elbow}
 
 Based on these specifics, recommend the single best string model available on the market today. Consider all string categories: polyester, multifilament, natural gut, synthetic gut, hybrid setups. Pick the most accurate string for THIS player's exact needs — do not default to the same strings every time. Provide a specific tension range in lbs appropriate for their racket and style.`;
@@ -552,6 +604,18 @@ Based on these specifics, recommend the single best string model available on th
                   onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} />
               </div>
             ))}
+            <div style={{ marginBottom: 18 }}>
+              <label style={labelStyle}>Top Priority</label>
+              <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
+                style={{ ...inputStyle, cursor: "pointer", appearance: "none" }}>
+                <option value="">What matters most?</option>
+                <option>Power & Comfort</option>
+                <option>Control & Feel</option>
+                <option>Spin & Bite</option>
+                <option>Durability</option>
+                <option>Arm-Friendly</option>
+              </select>
+            </div>
             <div style={{ marginBottom: 28 }}>
               <label style={labelStyle}>Elbow Health</label>
               <select value={form.elbow} onChange={e => setForm({ ...form, elbow: e.target.value })}
@@ -676,7 +740,7 @@ const AboutPage = ({ setPage }) => (
       <div className="about-cards" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         {[
           { label: "Who We Are", text: "We're a group of four high school tennis players from Frisco, Texas, who share a deep passion for the sport and entrepreneurship. Tension Labs was born from a simple idea: what if getting your racket strung was as convenient as ordering food delivery?" },
-          { label: "Our Mission", text: "To provide every player in North Texas with access to precise, high-quality stringing that enhances their game — delivered with zero hassle. Premium stringing shouldn't require driving across town or waiting at a pro shop." },
+          { label: "Our Mission", text: "To provide every player in Frisco with access to precise, high-quality stringing that enhances their game — delivered with zero hassle. Premium stringing shouldn't require driving across town or waiting at a pro shop." },
         ].map((b, i) => (
           <FadeIn key={i} delay={i * 0.15}>
             <div style={{ background: C.white, borderRadius: 20, padding: "44px 40px", boxShadow: "0 2px 20px rgba(13,13,13,0.06)" }}>
@@ -691,7 +755,7 @@ const AboutPage = ({ setPage }) => (
         <div style={{ background: C.dark, borderRadius: 20, padding: "44px 40px", boxShadow: "0 2px 20px rgba(13,13,13,0.1)" }}>
           <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 2.5, textTransform: "uppercase", marginBottom: 32, fontWeight: 600 }}>Why Choose Us</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 18 }}>
-            {["Founded by competitive tennis players who understand the game", "Precision stringing with attention to every detail", "Free pickup and delivery throughout North Texas", "Quick 2–3 business day turnaround", "AI-powered string recommendations tailored to your game"].map((item, i) => (
+            {["Founded by competitive tennis players who understand the game", "Precision stringing with attention to every detail", "Free pickup and delivery throughout Frisco", "Quick 2–3 business day turnaround", "AI-powered string recommendations tailored to your game"].map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 11, fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.7 }}>
                 <span style={{ marginTop: 3, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}><CheckIcon /></span> {item}
               </div>
@@ -748,7 +812,16 @@ const BookPage = ({ setPage, selectedService }) => {
 
   const handleSubmit = () => {
     const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); return; }
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      const fieldOrder = ["name", "phone", "email", "racket", "tension", "stringType", "pickup", "dropoff", "date"];
+      const firstError = fieldOrder.find(k => e[k]);
+      if (firstError) {
+        const el = document.getElementById(`field-${firstError}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
     setShowConfirm(true);
   };
 
@@ -933,16 +1006,16 @@ const BookPage = ({ setPage, selectedService }) => {
           <div className="book-form-wrap" style={{ display: "flex", justifyContent: "center", marginTop: 320 }}>
           <div style={{ background: C.white, borderRadius: 20, padding: "48px 44px", maxWidth: 680, width: "100%", boxShadow: "0 2px 20px rgba(13,13,13,0.06)" }}>
             <div className="book-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-              <div><label style={labelStyle}>Full Name</label><input style={iStyle("name")} placeholder="John Smith" value={form.name} onChange={e => update("name", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "name")} />{errMsg("name")}</div>
-              <div><label style={labelStyle}>Phone</label><input style={iStyle("phone")} placeholder="(555) 123-4567" value={form.phone} onChange={e => update("phone", formatPhone(e.target.value))} onFocus={focusOn} onBlur={e => focusOff(e, "phone")} />{errMsg("phone")}</div>
+              <div id="field-name"><label style={labelStyle}>Full Name</label><input style={iStyle("name")} placeholder="John Smith" value={form.name} onChange={e => update("name", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "name")} />{errMsg("name")}</div>
+              <div id="field-phone"><label style={labelStyle}>Phone</label><input style={iStyle("phone")} placeholder="(555) 123-4567" value={form.phone} onChange={e => update("phone", formatPhone(e.target.value))} onFocus={focusOn} onBlur={e => focusOff(e, "phone")} />{errMsg("phone")}</div>
             </div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Email</label><input style={iStyle("email")} placeholder="john@example.com" value={form.email} onChange={e => update("email", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "email")} />{errMsg("email")}</div>
+            <div id="field-email" style={{ marginTop: 18 }}><label style={labelStyle}>Email</label><input style={iStyle("email")} placeholder="john@example.com" value={form.email} onChange={e => update("email", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "email")} />{errMsg("email")}</div>
             <div className="book-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 18 }}>
-              <div><label style={labelStyle}>Racket Brand & Model</label><input style={iStyle("racket")} placeholder="e.g. Wilson Blade 98" value={form.racket} onChange={e => update("racket", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "racket")} />{errMsg("racket")}</div>
-              <div><label style={labelStyle}>Desired Tension</label><input style={iStyle("tension")} placeholder="e.g. 55 lbs" value={form.tension} onChange={e => update("tension", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "tension")} />{errMsg("tension")}</div>
+              <div id="field-racket"><label style={labelStyle}>Racket Brand & Model</label><input style={iStyle("racket")} placeholder="e.g. Wilson Blade 98" value={form.racket} onChange={e => update("racket", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "racket")} />{errMsg("racket")}</div>
+              <div id="field-tension"><label style={labelStyle}>Desired Tension</label><input style={iStyle("tension")} placeholder="e.g. 55 lbs" value={form.tension} onChange={e => update("tension", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "tension")} />{errMsg("tension")}</div>
             </div>
             <div style={{ marginTop: 18 }}><label style={labelStyle}>Service</label><select style={{ ...inputStyle, cursor: "pointer", appearance: "none" }} value={form.service} onChange={e => update("service", e.target.value)}><option>Signature Stringing — $14.99 (Customer provides strings)</option><option>Premium Stringing — $19.99 + string cost (We provide strings)</option></select></div>
-            <div style={{ marginTop: 18 }}>
+            <div id="field-stringType" style={{ marginTop: 18 }}>
               <label style={labelStyle}>String Type & Gauge</label>
               <input style={iStyle("stringType")} placeholder="e.g. Luxilon ALU Power 16L, Babolat RPM Blast 16..." value={form.stringType} onChange={e => update("stringType", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "stringType")} />
               {errMsg("stringType")}
@@ -951,9 +1024,9 @@ const BookPage = ({ setPage, selectedService }) => {
                 onMouseEnter={e => e.target.style.color = C.dark} onMouseLeave={e => e.target.style.color = C.muted}
               >→ Not sure? Use our AI Advisor on the homepage.</p>
             </div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Pickup Location</label><input style={iStyle("pickup")} placeholder="e.g. Your home, local tennis club..." value={form.pickup} onChange={e => update("pickup", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "pickup")} />{errMsg("pickup")}</div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Drop-Off Location</label><input style={iStyle("dropoff")} placeholder="e.g. Same as pickup..." value={form.dropoff} onChange={e => update("dropoff", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "dropoff")} />{errMsg("dropoff")}</div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Preferred Pickup Date</label><input type="date" style={iStyle("date")} value={form.date} onChange={e => update("date", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "date")} />{errMsg("date")}</div>
+            <div id="field-pickup" style={{ marginTop: 18 }}><label style={labelStyle}>Pickup Location</label><input style={iStyle("pickup")} placeholder="e.g. Your home, local tennis club..." value={form.pickup} onChange={e => update("pickup", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "pickup")} />{errMsg("pickup")}</div>
+            <div id="field-dropoff" style={{ marginTop: 18 }}><label style={labelStyle}>Drop-Off Location</label><input style={iStyle("dropoff")} placeholder="e.g. Same as pickup..." value={form.dropoff} onChange={e => update("dropoff", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "dropoff")} />{errMsg("dropoff")}</div>
+            <div id="field-date" style={{ marginTop: 18 }}><label style={labelStyle}>Preferred Pickup Date</label><input type="date" style={iStyle("date")} value={form.date} onChange={e => update("date", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "date")} />{errMsg("date")}</div>
             <div style={{ marginTop: 18 }}><label style={labelStyle}>Additional Notes <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label><textarea style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} placeholder="Any special requests..." value={form.notes} onChange={e => update("notes", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "notes")} /></div>
             <p style={{ marginTop: 24, fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6 }}>
               No payment required now — payment is collected at pickup.
@@ -996,6 +1069,10 @@ export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [selectedService, setSelectedService] = useState("Signature Stringing — $14.99 (Customer provides strings)");
   useEffect(() => {
+    const titles = { home: "Tension Labs - Tennis Racket Stringing", book: "Tension Labs - Booking", about: "Tension Labs - About" };
+    document.title = titles[page] || "Tension Labs";
+  }, [page]);
+  useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -1015,21 +1092,27 @@ export default function App() {
         @media (max-width: 900px) {
           .nav-desktop { display: none !important; }
           .nav-mobile { display: flex !important; }
+          .hero-stats { display: none !important; }
+          .hero-meta { display: none !important; }
+          .hero-section { padding-top: 60px !important; padding-left: 20px !important; padding-right: 20px !important; overflow: hidden !important; }
+          .hero-content-group { padding-top: 20px !important; }
+          .hero-image { margin-top: 32px !important; }
+          .hero-title { font-size: clamp(36px, 7vw, 72px) !important; margin-bottom: 36px !important; }
+          .hero-cta { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; max-width: 260px !important; }
+          .hero-btn { padding: 12px 24px !important; font-size: 13px !important; width: 100% !important; justify-content: center !important; box-sizing: border-box !important; }
+          .service-tag { display: none !important; }
+          .mobile-menu-panel { display: block !important; }
         }
         @media (max-width: 768px) {
-          /* Global section padding */
           .section-pad { padding: 80px 20px !important; }
-
-          /* Hero */
-          .hero-section { padding: 0 20px 60px !important; }
-          .hero-meta { left: 20px !important; right: 20px !important; top: 72px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
-          .hero-cta { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-          /* Hero stats — hide on mobile */
+          .hero-section { padding: 0 20px 60px !important; padding-top: 60px !important; overflow: hidden !important; }
+          .hero-content-group { padding-top: 16px !important; }
+          .hero-meta { display: none !important; }
+          .hero-cta { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; max-width: 240px !important; }
           .hero-stats { display: none !important; }
-          /* Hero section image — hide on mobile */
-          .hero-image { display: none !important; }
-          /* Hero section padding bottom on mobile */
-          .hero-section { padding-bottom: 60px !important; }
+          .hero-title { font-size: clamp(28px, 10.5vw, 48px) !important; margin-bottom: 28px !important; line-height: 1.0 !important; }
+          .hero-image { display: block !important; }
+          .hero-btn { padding: 11px 22px !important; font-size: 13px !important; width: 100% !important; justify-content: center !important; box-sizing: border-box !important; }
 
           /* Shared section headers */
           .section-header { flex-direction: column !important; align-items: flex-start !important; padding: 48px 0 40px !important; }
