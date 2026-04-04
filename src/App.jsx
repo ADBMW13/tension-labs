@@ -457,13 +457,14 @@ const Services = ({ setPage, setSelectedService }) => (
         { name: "Signature Stringing", price: "$14.99", tag: "You provide strings", desc: "Standard restringing using your own strings. Every racket gets a fresh overgrip included.", features: ["Customer-provided strings", "Fresh overgrip included", "2–3 day turnaround", "Free pickup & delivery"], highlight: false },
         { name: "Premium Stringing", price: "$19.99 + string cost", tag: "Most Popular", desc: "We source and provide the strings. We get any string of your choice — you don't lift a finger.", features: ["We provide the strings", "Wide string selection", "Fresh overgrip included", "Free pickup & delivery"], highlight: true },
       ].map((t, i) => (
-        <FadeIn key={i} delay={i * 0.15}>
+        <FadeIn key={i} delay={i * 0.15} style={{ display: "flex", flexDirection: "column" }}>
           <div style={{
             background: t.highlight ? C.dark : C.white,
             borderRadius: 20, padding: "44px 40px", position: "relative",
             transition: "transform 0.35s ease, box-shadow 0.35s ease",
             boxShadow: "0 2px 20px rgba(13,13,13,0.06)",
             cursor: "default",
+            display: "flex", flexDirection: "column", height: "100%", boxSizing: "border-box",
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(13,13,13,0.12)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 20px rgba(13,13,13,0.06)"; }}
@@ -477,7 +478,7 @@ const Services = ({ setPage, setSelectedService }) => (
             <h3 style={{ fontSize: 22, fontWeight: 700, color: t.highlight ? C.white : C.dark, marginBottom: 6, marginTop: 8, letterSpacing: "-0.01em" }}>{t.name}</h3>
             <div style={{ fontSize: 36, fontWeight: 800, color: t.highlight ? "rgba(255,255,255,0.95)" : C.dark, marginBottom: 16, letterSpacing: "-0.03em" }}>{t.price}</div>
             <p style={{ fontSize: 14, color: t.highlight ? "rgba(255,255,255,0.55)" : C.muted, lineHeight: 1.75, marginBottom: 28, paddingBottom: 28, borderBottom: `1px solid ${t.highlight ? "rgba(255,255,255,0.1)" : C.border}` }}>{t.desc}</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 11, marginBottom: 36 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 11, marginBottom: 36, flexGrow: 1 }}>
               {t.features.map((f, fi) => (
                 <div key={fi} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: t.highlight ? "rgba(255,255,255,0.8)" : C.dark }}>
                   <span style={{ color: t.highlight ? "rgba(255,255,255,0.6)" : C.muted }}><CheckIcon /></span> {f}
@@ -682,24 +683,25 @@ const Contact = () => (
         </p>
       </FadeIn>
     </div>
-    <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+    <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, alignItems: "stretch", gridAutoRows: "1fr" }}>
       {[
         { label: "Phone", value: "(945) 217-0416" },
-        { label: "Email", value: "tensionlabsstringing@gmail.com" },
+        { label: "Email", value: "tensionlabstringing@gmail.com" },
         { label: "Service Area", value: "Frisco, TX" },
         { label: "Turnaround", value: "2–3 Business Days" },
       ].map((item, i) => (
-        <FadeIn key={i} delay={i * 0.1}>
+        <FadeIn key={i} delay={i * 0.1} style={{ display: "flex", width: "100%", height: "100%", minWidth: 0 }}>
           <div style={{
             background: C.white, borderRadius: 16, padding: "36px 28px",
             transition: "transform 0.3s ease, box-shadow 0.3s ease",
             boxShadow: "0 2px 16px rgba(13,13,13,0.05)",
+            width: "100%", height: "100%", boxSizing: "border-box", minWidth: 0, overflow: "hidden",
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(13,13,13,0.1)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 16px rgba(13,13,13,0.05)"; }}
           >
             <div style={{ fontSize: 10, color: C.mutedLight, letterSpacing: 2.5, textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>{item.label}</div>
-            <div style={{ fontSize: 15.5, fontWeight: 600, color: C.dark, letterSpacing: "-0.01em" }}>{item.value}</div>
+            <div style={{ fontSize: 15.5, fontWeight: 600, color: C.dark, letterSpacing: "-0.01em", overflowWrap: "break-word", wordBreak: "break-all" }}>{item.value}</div>
           </div>
         </FadeIn>
       ))}
@@ -773,6 +775,7 @@ const BookPage = ({ setPage, selectedService }) => {
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [sending, setSending] = useState(false);
+  const [fading, setFading] = useState(false);
   const [sendError, setSendError] = useState("");
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({ name: "", phone: "", email: "", service: selectedService || "Signature Stringing — $14.99 (Customer provides strings)", stringType: "", tension: "", racket: "", pickup: "", dropoff: "", date: "", notes: "" });
@@ -846,16 +849,19 @@ const BookPage = ({ setPage, selectedService }) => {
       notes:            form.notes || "None",
     };
     try {
-      await emailjs.send(SERVICE, BIZ_TPL,  { ...params, to_email: "tensionlabsstringing@gmail.com" }, PUB_KEY);
+      await emailjs.send(SERVICE, BIZ_TPL,  { ...params, to_email: "tensionlabstringing@gmail.com" }, PUB_KEY);
       await emailjs.send(SERVICE, CUST_TPL, { ...params, to_email: form.email }, PUB_KEY);
+      setSending(false);
+      setFading(true);
+      await new Promise(r => setTimeout(r, 700));
       setShowConfirm(false);
       setSubmitted(true);
+      setFading(false);
     } catch (err) {
       console.error("EmailJS error status:", err?.status);
       console.error("EmailJS error text:", err?.text);
       console.error("EmailJS full error:", JSON.stringify(err));
       setSendError(`Error ${err?.status || ""}: ${err?.text || "Unknown error. Check console for details."}`);
-    } finally {
       setSending(false);
     }
   };
@@ -884,18 +890,27 @@ const BookPage = ({ setPage, selectedService }) => {
 
   // Order confirmation modal
   const ConfirmModal = () => (
-    <div onClick={() => setShowConfirm(false)} style={{
+    <div onClick={() => { if (!sending && !fading) setShowConfirm(false); }} style={{
       position: "fixed", inset: 0, zIndex: 1000,
       background: "rgba(13,13,13,0.6)", backdropFilter: "blur(6px)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "24px",
       animation: "fadeIn 0.25s ease",
     }}>
+      {/* Full-screen white fade overlay */}
+      {fading && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1002,
+          background: C.bg,
+          animation: "fadeIn 0.6s ease forwards",
+        }} />
+      )}
       <div onClick={e => e.stopPropagation()} style={{
         background: C.white, borderRadius: 24, padding: "48px 44px",
         maxWidth: 520, width: "100%", maxHeight: "90vh", overflowY: "auto",
         boxShadow: "0 32px 80px rgba(13,13,13,0.2)",
         animation: "slideUp 0.3s ease",
+        position: "relative", zIndex: 1001,
       }}>
         <p style={{ fontSize: 10, color: C.muted, letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Review Your Order</p>
         <h2 style={{ fontSize: 28, fontWeight: 800, color: C.dark, letterSpacing: "-0.03em", marginBottom: 32 }}>ORDER SUMMARY.</h2>
@@ -945,7 +960,15 @@ const BookPage = ({ setPage, selectedService }) => {
           }}
             onMouseEnter={e => { if (!sending) e.currentTarget.style.opacity = "0.85"; }}
             onMouseLeave={e => { if (!sending) e.currentTarget.style.opacity = "1"; }}
-          >{sending ? "Sending…" : <> Confirm Order <ArrowRight size={12} /></>}</button>
+          >{sending ? (
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ animation: "spin 0.8s linear infinite" }}>
+                <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" fill="none" />
+                <path d="M8 2 A6 6 0 0 1 14 8" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
+              </svg>
+              Sending…
+            </span>
+          ) : <> Confirm Order <ArrowRight size={12} /></>}</button>
         </div>
         {sendError && <p style={{ fontSize: 12, color: "#e05252", textAlign: "center", marginTop: 16, fontWeight: 500 }}>{sendError}</p>}
       </div>
@@ -953,7 +976,7 @@ const BookPage = ({ setPage, selectedService }) => {
   );
 
   if (submitted) return (
-    <div style={{ paddingTop: 64, minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", padding: "120px 40px" }}>
+    <div style={{ paddingTop: 64, minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", padding: "120px 40px", animation: "fadeIn 0.6s ease" }}>
       <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#4ade80", marginBottom: 24, marginTop: -32, boxShadow: "0 0 0 6px rgba(74,222,128,0.2)" }} />
       <p style={{ fontSize: 11, color: C.muted, letterSpacing: 3, textTransform: "uppercase", marginBottom: 20, fontWeight: 500 }}>Order Received</p>
       <h1 style={{ fontSize: "clamp(40px, 7vw, 80px)", fontWeight: 800, color: C.dark, lineHeight: 1, letterSpacing: "-0.035em", marginBottom: 24 }}>THANK YOU.</h1>
@@ -1026,7 +1049,7 @@ const BookPage = ({ setPage, selectedService }) => {
             </div>
             <div id="field-pickup" style={{ marginTop: 18 }}><label style={labelStyle}>Pickup Location</label><input style={iStyle("pickup")} placeholder="e.g. Your home, local tennis club..." value={form.pickup} onChange={e => update("pickup", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "pickup")} />{errMsg("pickup")}</div>
             <div id="field-dropoff" style={{ marginTop: 18 }}><label style={labelStyle}>Drop-Off Location</label><input style={iStyle("dropoff")} placeholder="e.g. Same as pickup..." value={form.dropoff} onChange={e => update("dropoff", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "dropoff")} />{errMsg("dropoff")}</div>
-            <div id="field-date" style={{ marginTop: 18 }}><label style={labelStyle}>Preferred Pickup Date</label><input type="date" style={iStyle("date")} value={form.date} onChange={e => update("date", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "date")} />{errMsg("date")}</div>
+            <div id="field-date" style={{ marginTop: 18 }}><label style={labelStyle}>Preferred Pickup Date</label><input type="date" style={{ ...iStyle("date"), appearance: "none", WebkitAppearance: "none" }} value={form.date} onChange={e => update("date", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "date")} />{errMsg("date")}</div>
             <div style={{ marginTop: 18 }}><label style={labelStyle}>Additional Notes <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label><textarea style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} placeholder="Any special requests..." value={form.notes} onChange={e => update("notes", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "notes")} /></div>
             <p style={{ marginTop: 24, fontSize: 12, color: C.muted, textAlign: "center", lineHeight: 1.6 }}>
               No payment required now — payment is collected at pickup.
@@ -1088,6 +1111,7 @@ export default function App() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(32px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 900px) {
           .nav-desktop { display: none !important; }
@@ -1102,6 +1126,11 @@ export default function App() {
           .hero-btn { padding: 12px 24px !important; font-size: 13px !important; width: 100% !important; justify-content: center !important; box-sizing: border-box !important; }
           .service-tag { display: none !important; }
           .mobile-menu-panel { display: block !important; }
+          /* Contact cards — equal 2x2 grid on tablet */
+          .contact-grid { grid-template-columns: 1fr 1fr !important; }
+          /* Book page — hide image, pull form up */
+          .book-image { display: none !important; }
+          .book-form-wrap { margin-top: 0 !important; }
         }
         @media (max-width: 768px) {
           .section-pad { padding: 80px 20px !important; }
