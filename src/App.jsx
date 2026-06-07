@@ -454,8 +454,8 @@ const Services = ({ setPage, setSelectedService }) => (
     </div>
     <div className="services-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
       {[
-        { name: "Signature Stringing", price: "$14.99", tag: "You provide strings", desc: "Standard restringing using your own strings. Every racket gets a fresh overgrip included.", features: ["Customer-provided strings", "Fresh overgrip included", "2–3 day turnaround", "Free pickup & delivery"], highlight: false },
-        { name: "Premium Stringing", price: "$19.99 + string cost", tag: "Most Popular", desc: "We source and provide the strings. We get any string of your choice — you don't lift a finger.", features: ["We provide the strings", "Wide string selection", "Fresh overgrip included", "Free pickup & delivery"], highlight: true },
+        { name: "Signature Stringing", price: "$19.99", tag: "You provide strings", desc: "Standard restringing using your own strings. Every racket gets a fresh overgrip included.", features: ["Customer-provided strings", "Fresh overgrip included", "2–3 day turnaround", "Free pickup & delivery"], highlight: false },
+        { name: "Premium Stringing", price: "$24.99 + string cost", tag: "Most Popular", desc: "We source and provide the strings. We get any string of your choice — you don't lift a finger.", features: ["We provide the strings", "Wide string selection", "Fresh overgrip included", "Free pickup & delivery"], highlight: true },
       ].map((t, i) => (
         <FadeIn key={i} delay={i * 0.15} style={{ display: "flex", flexDirection: "column" }}>
           <div style={{
@@ -485,7 +485,7 @@ const Services = ({ setPage, setSelectedService }) => (
                 </div>
               ))}
             </div>
-            <button onClick={() => { setSelectedService(t.name === "Signature Stringing" ? "Signature Stringing — $14.99 (Customer provides strings)" : "Premium Stringing — $19.99 + string cost (We provide strings)"); setPage("book"); window.scrollTo({ top: 0 }); }} style={{
+            <button onClick={() => { setSelectedService(t.name === "Signature Stringing" ? "Signature Stringing — $19.99 (Customer provides strings)" : "Premium Stringing — $24.99 + string cost (We provide strings)"); setPage("book"); window.scrollTo({ top: 0 }); }} style={{
               width: "100%", padding: "14px 0", borderRadius: 100,
               background: t.highlight ? C.white : C.dark,
               color: t.highlight ? C.dark : C.white,
@@ -778,7 +778,7 @@ const BookPage = ({ setPage, selectedService }) => {
   const [fading, setFading] = useState(false);
   const [sendError, setSendError] = useState("");
   const [errors, setErrors] = useState({});
-  const [form, setForm] = useState({ name: "", phone: "", email: "", service: selectedService || "Signature Stringing — $14.99 (Customer provides strings)", stringType: "", tension: "", racket: "", pickup: "", dropoff: "", date: "", notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", service: selectedService || "Signature Stringing — $19.99 (Customer provides strings)", stringType: "", tension: "", racket: "", pickup: "", dropoff: "", date: "", notes: "" });
   const update = (k, v) => { setForm(p => ({ ...p, [k]: v })); setErrors(e => ({ ...e, [k]: "" })); };
   const formatPhone = (val) => {
     const digits = val.replace(/\D/g, "").slice(0, 10);
@@ -1037,7 +1037,7 @@ const BookPage = ({ setPage, selectedService }) => {
               <div id="field-racket"><label style={labelStyle}>Racket Brand & Model</label><input style={iStyle("racket")} placeholder="e.g. Wilson Blade 98" value={form.racket} onChange={e => update("racket", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "racket")} />{errMsg("racket")}</div>
               <div id="field-tension"><label style={labelStyle}>Desired Tension</label><input style={iStyle("tension")} placeholder="e.g. 55 lbs" value={form.tension} onChange={e => update("tension", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "tension")} />{errMsg("tension")}</div>
             </div>
-            <div style={{ marginTop: 18 }}><label style={labelStyle}>Service</label><select style={{ ...inputStyle, cursor: "pointer", appearance: "none" }} value={form.service} onChange={e => update("service", e.target.value)}><option>Signature Stringing — $14.99 (Customer provides strings)</option><option>Premium Stringing — $19.99 + string cost (We provide strings)</option></select></div>
+            <div style={{ marginTop: 18 }}><label style={labelStyle}>Service</label><select style={{ ...inputStyle, cursor: "pointer", appearance: "none" }} value={form.service} onChange={e => update("service", e.target.value)}><option>Signature Stringing — $19.99 (Customer provides strings)</option><option>Premium Stringing — $24.99 + string cost (We provide strings)</option></select></div>
             <div id="field-stringType" style={{ marginTop: 18 }}>
               <label style={labelStyle}>String Type & Gauge</label>
               <input style={iStyle("stringType")} placeholder="e.g. Luxilon ALU Power 16L, Babolat RPM Blast 16..." value={form.stringType} onChange={e => update("stringType", e.target.value)} onFocus={focusOn} onBlur={e => focusOff(e, "stringType")} />
@@ -1090,7 +1090,7 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [scrolled, setScrolled] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
-  const [selectedService, setSelectedService] = useState("Signature Stringing — $14.99 (Customer provides strings)");
+  const [selectedService, setSelectedService] = useState("Signature Stringing — $19.99 (Customer provides strings)");
   useEffect(() => {
     const titles = { home: "Tension Labs - Tennis Racket Stringing", book: "Tension Labs - Booking", about: "Tension Labs - About" };
     document.title = titles[page] || "Tension Labs";
